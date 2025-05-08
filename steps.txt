@@ -1,0 +1,360 @@
+composer global require laravel/installer
+
+laravel new laravel-react-full-stack
+
+php artisan migrate 
+
+npm create vite "create frontEnd part" "choose frameWork"
+
+cd to react folder
+
+npm install
+
+npm install react-router-dom -S
+
+create route file
+import { createBrowserRouter } from "react-router-dom";
+import Login from "./views/login";
+import Register from "./views/register";
+import User from "./views/user";
+import NotFound from "./views/notFound";
+
+const router = createBrowserRouter([
+    {
+        path: "/login",
+        element: <Login />,
+    },
+    {
+        path: "/register",
+        element: <Register />,
+    },
+    {
+        path: "/user",
+        element: <User />,
+    },
+    {
+        path: "*",
+        element: <NotFound />,
+    },
+]);
+
+export default router;
+
+create views folder has 4 files
+import React from "react";
+
+const Login = () => {
+    return (
+        <div className="login-container">
+            <div>Login</div>
+        </div>
+    );
+};
+
+export default Login;
+import React from "react";
+
+const NotFound = () => {
+    return (
+        <div className="login-container">
+            <div> 404 - Page Not Found</div>
+        </div>
+    );
+};
+
+export default NotFound;
+import React from "react";
+
+const Register = () => {
+    return (
+        <div className="login-container">
+            <div>Login</div>
+        </div>
+    );
+};
+
+export default Register;
+import React from "react";
+
+const User = () => {
+    return (
+        <div className="login-container">
+            <div>Login</div>
+        </div>
+    );
+};
+
+export default User;
+
+
+new update on route page
+import { createBrowserRouter } from "react-router-dom";
+import Login from "./views/login";
+import Register from "./views/register";
+import User from "./views/user";
+import NotFound from "./views/notFound";
+import DefaultLayout from "./components/defaultLayout.component";
+import GuestLayout from "./components/guestLayout.component";
+import Dashboard from "./views/dashboard";
+
+const router = createBrowserRouter([
+    {
+        path: "/",
+        element: <DefaultLayout />,
+        children: [
+            {
+                path: "/user",
+                element: <User />,
+            },
+            {
+                path: "/dashboard",
+                element: <Dashboard />,
+            },
+        ],
+    },
+    {
+        path: "/",
+        element: <GuestLayout />,
+        children: [
+            {
+                path: "/login",
+                element: <Login />,
+            },
+            {
+                path: "/register",
+                element: <Register />,
+            },
+        ],
+    },
+
+    {
+        path: "*",
+        element: <NotFound />,
+    },
+]);
+
+export default router;
+
+this update after creating 2 layouts 
+1 while loggedin 
+other for guest 
+
+
+to make the Auth part default layout we need context
+which is 
+
+import { createContext, useState } from "react";
+
+const StateContext = createContext({
+    user: null,
+    token: null,
+    setUser: () => {},
+    setToken: () => {},
+});
+
+export const ContextProvider = ({ children }) => {
+    const [user, setUser] = useState({});
+    //we need here a default value for useState of token
+    //it will be the value of ACCESS_TOKEN in local storage
+    //at this moment it is null bec there is no currentUser loggedIn
+    const [token, _setToken] = useState(localStorage.getItem("ACCESS_TOKEN"));
+
+    //this function to store token in local storage
+    //when user login or register
+    //whenever the user refresh the page or close the app it still have the token "logged in"
+    const setToken = (token) => {
+        _setToken(token);
+        if (token) {
+            localStorage.setItem("ACCESS_TOKEN", token);
+        } else {
+            localStorage.removeItem("ACCESS_TOKEN");
+        }
+    };
+
+    return (
+        <StateContext.Provider value={{ user, token, setUser, setToken }}>
+            {children}
+        </StateContext.Provider>
+    );
+};
+
+export const useStateContext = () => useContext(StateContext);
+ok now i can call it in default and guest layouts
+import { Outlet } from "react-router-dom";
+import { useStateContext } from "../contexts/context";
+import { Navigate } from "react-router-dom";
+
+const DefaultLayout = () => {
+    const { user, token } = useStateContext();
+
+    //activate te auth guard
+    if (!token) {
+        return <Navigate to="/login" />;
+    }
+
+    return (
+        <div>
+            <Outlet />
+        </div>
+    );
+};
+
+export default DefaultLayout;
+
+
+import { Outlet } from "react-router-dom";
+import { useStateContext } from "../contexts/context";
+import { Navigate } from "react-router-dom";
+
+const GuestLayout = () => {
+    const { user, token } = useStateContext();
+
+    //activate te guest guard
+    if (token) {
+        return <Navigate to="/" />;
+    }
+
+    return (
+        <div>
+            <Outlet />
+        </div>
+    );
+};
+
+
+export default GuestLayout;
+
+//after setup login and register page 
+i need to call apis from backend using npm install -S axios
+import axios from "axios";
+
+const axiosClient = axios.create({
+    baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`,
+});
+
+//interceptors for request
+axiosClient.interceptors.request.use(async (config) => {
+    const token = localStorage.get("ACCESS_TOKEN");
+    config.headers = {
+        Authorization: `Bearer ${token}`,
+    };
+
+    return config;
+});
+
+export default axiosClient;
+
+//interceptors for response to take action
+axiosClient.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error) => {
+        const { response } = error;
+        if (response.status === 401) {
+            localStorage.removeItem("ACCESS_TOKEN");
+        }
+        throw error;
+    }
+);
+create .env this to use it in api and .env.example this for github
+VITE_API_BASE_URL=http://localhost:8000/
+
+and we call it here 
+
+import React, { useRef } from "react";
+import { Link } from "react-router-dom";
+import axiosClient from "../APIs";
+import { useStateContext } from "../contexts/context";
+
+const Register = () => {
+    //create refs to avoid the mount of the page
+    //everytime i wrote any thing in the input
+    const nameRef = useRef();
+    const emailRef = useRef();
+    const passwordRef = useRef();
+    const passwordConfirmationRef = useRef();
+
+    //call stateContext to set user and token
+    const { setUser, setToken } = useStateContext();
+
+    const onSubmit = (e) => {
+        e.preventDefault();
+        const payload = {
+            name: nameRef.current.value,
+            email: emailRef.current.value,
+            password: passwordRef.current.value,
+            password_confirmation: passwordConfirmationRef.current.value,
+        };
+
+        //call of the API from backend
+        axiosClient
+            .post("/register", payload)
+            .then(({ data }) => {
+                setUser(data.user);
+                setToken(data.token);
+            })
+            .catch((err) => {
+                const response = err.response;
+                if (response && response.status === 422) {
+                    const errors = response.data.errors;
+                    console.log(errors);
+                } else {
+                    console.log(err);
+                }
+            });
+    };
+
+    return (
+        <div className="login-signup-form animated fadeInDown">
+            <div className="form">
+                <form onSubmit={onSubmit}>
+                    <h1 className="title">Register</h1>
+                    <input ref={nameRef} type="text" placeholder="Full Name" />
+                    <input ref={emailRef} type="email" placeholder="Email" />
+                    <input
+                        ref={passwordRef}
+                        type="password"
+                        placeholder="Password"
+                    />
+                    <input
+                        ref={passwordConfirmationRef}
+                        type="password"
+                        placeholder="Password Confirmation"
+                    />
+                    <button className="btn btn-block" type="submit">
+                        Register
+                    </button>
+                    <p className="message">
+                        Already Registered? <Link to="/login">Sign In</Link>
+                    </p>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default Register;
+
+
+/**********************************************************/
+go backend shwya
+
+php artisan make:controller Api/AuthController
+
+php artisan make:request RegisterReguest
+php artisan make:request LoginReguest
+php artisan install:api
+php artisan config:publish cors
+
+in API.js
+ Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+it must be added to run apis
+
+
+$ php artisan make:controller Api/UserController --model=User --requests --resource --api
+$ php artisan make:resource UserResource it is a class that convert the db table into json file
+ php artisan db:seed
+
