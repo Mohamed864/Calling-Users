@@ -1,0 +1,84 @@
+//second project
+
+composer create-project laravel/laravel laravel12-react-inertia
+
+1- composer require laravel/breeze --dev
+
+2- php artisan breeze:install: it allows me to get react lib with in resources
+
+Laravel Breeze is a minimal, simple starter kit for Laravel applications that provides a basic authentication system and frontend scaffolding.
+
+What Laravel Breeze Does
+
+Sets Up Authentication
+
+Login
+
+Registration
+
+Password reset
+
+Email verification (optional)
+
+Logout
+
+Provides Frontend Scaffolding
+
+Breeze includes prebuilt UI views using different stacks, depending on your choice:
+
+Blade + Tailwind CSS (default)
+
+Blade + Alpine.js
+
+Inertia.js + Vue
+
+Inertia.js + React
+
+Includes Authentication Routes
+
+Breeze registers all necessary routes under the hood using Laravel’s built-in authentication features.
+
+Minimal & Extendable
+
+It’s not bloated — it gives you only the essentials so you can build your app your way.
+
+Great for learning and for small to mid-size projects.
+
+after i decleared the pgsql in .env
+
+i need to put php artisan migrate
+
+
+after all of that 
+we can say 
+php artisan serve , npm run dev
+
+
+php artisan tinker
+
+to allow dark mode in laravel/breeze i will go in tailwind.config.js
+and say :
+
+import defaultTheme from "tailwindcss/defaultTheme";
+import forms from "@tailwindcss/forms";
+
+/** @type {import('tailwindcss').Config} */
+export default {
+    darkMode: "class",
+    content: [
+        "./vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php",
+        "./storage/framework/views/*.php",
+        "./resources/views/**/*.blade.php",
+        "./resources/js/**/*.jsx",
+    ],
+
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ["Figtree", ...defaultTheme.fontFamily.sans],
+            },
+        },
+    },
+
+    plugins: [forms],
+};
