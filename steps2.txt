@@ -1,5 +1,7 @@
 //second project
 
+Part_1
+
 composer create-project laravel/laravel laravel12-react-inertia
 
 1- composer require laravel/breeze --dev
@@ -82,3 +84,240 @@ export default {
 
     plugins: [forms],
 };
+
+
+part_2
+
+implements MustVerifyEmail it means whenever user registers
+it will verifyEmail ok the verification page will appear according
+to .env in logs of laravel
+
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class User extends Authenticatable implements MustVerifyEmail
+{
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+}
+
+inertia it is used to connect front to backend
+instead of using apis
+
+
+we start to create models 1st Projects: php artisan make:model Project -fm
+-fm is to genrate factory & migration file
+
+2nd php artisan make:model Task -fm
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('projects', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->longText('description')->nullable();
+            $table->timestamp('due_date')->nullable();
+            $table->string('status');
+            $table->string('image_path')->nullable();
+            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('updated_by')->constrained('users');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('projects');
+    }
+};
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('tasks', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->longText('description')->nullable();
+            $table->string('image_path')->nullable();
+            $table->string('status');
+            $table->string('priority');
+            $table->timestamp('due_date')->nullable();
+            $table->foreignId('assigned_user_id')->constrained('users');
+            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('updated_by')->constrained('users');
+            $table->foreignId('project_id')->constrained('projects');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('tasks');
+    }
+};
+
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Project>
+ */
+class ProjectFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->sentence(),
+            'description' => fake()->realText(),
+            'due_date' => fake()->dateTimeBetween('now', '+1 year'),
+            'status' => fake()->randomElement(['pending', 'in_progress', 'completed']),
+            'image_path'=> fake()->imageUrl(),
+            'created_at'=>1,
+            'updated_at'=>1,
+        ];
+    }
+}
+
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Task>
+ */
+class TaskFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->sentence(),
+            'description' => fake()->realText(),
+            'due_date' => fake()->dateTimeBetween('now', '+1 year'),
+            'status' => fake()->randomElement(['pending', 'in_progress', 'completed']),
+            'priority'=> fake()->randomElement(['low', 'medium', 'high']),
+            'image_path'=> fake()->imageUrl(),
+            'assigned_user_id' =>1,
+            'created_at'=>1,
+            'updated_at'=>1,
+        ];
+    }
+}
+
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Project;
+use App\Models\User;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        // User::factory(10)->create();
+
+        User::factory()->create([
+            'name' => 'behery',
+            'email' => 'beherym884@gmail.com',
+            'password' => bcrypt('123.321A'),
+            'email_verified_at'=>time(),
+        ]);
+
+        Project::factory()->count(30)->hasTasks(30)->create();
+
+    }
+}
+
+php artisan migrate:refresh --seed
+
+php artisan tinker
+\App\Models\Task::query()->paginate(5)->all()
