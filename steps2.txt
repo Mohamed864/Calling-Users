@@ -331,3 +331,12 @@ php artisan make:request UpdateProjectRequest
 same with Task && user
 
 stopped  at 58.55
+
+
+php artisan make:resource ProjectResource
+
+php artisan make:resource TaskResource
+
+php artisan make:resource UserResource
+
+min 1:25:33
